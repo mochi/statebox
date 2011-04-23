@@ -56,7 +56,7 @@ Optimizations:
 --------------
 
 There are two functions that modify a statebox that can be used to
-reduce its size. One of both of these should be done every time before
+reduce its size. One or both of these should be done every time before
 serializing the statebox.
 
 * `truncate(N, Statebox)` return Statebox with no more than `N` events in its
@@ -71,15 +71,15 @@ Usage:
 Simple `ordsets()` example:
 
     New = statebox:new(fun () -> [] end),
-    ChildA = statebox:modify({fun ordsets:add_element, [a]}, New),
-    ChildB = statebox:modify({fun ordsets:add_element, [b]}, New),
+    ChildA = statebox:modify({fun ordsets:add_element/2, [a]}, New),
+    ChildB = statebox:modify({fun ordsets:add_element/2, [b]}, New),
     Resolved = statebox:merge([ChildA, ChildB]),
-    value(Resolved) =:= [a, b].
+    statebox:value(Resolved) =:= [a, b].
 
 With manual control over timestamps:
 
     New = statebox:new(0, fun () -> [] end),
-    ChildA = statebox:modify(1, {fun ordsets:add_element, [a]}, New),
-    ChildB = statebox:modify(2, {fun ordsets:add_element, [b]}, New),
+    ChildA = statebox:modify(1, {fun ordsets:add_element/2, [a]}, New),
+    ChildB = statebox:modify(2, {fun ordsets:add_element/2, [b]}, New),
     Resolved = statebox:merge([ChildA, ChildB]),
-    value(Resolved) =:= [a, b].
+    statebox:value(Resolved) =:= [a, b].

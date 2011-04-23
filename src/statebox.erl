@@ -378,4 +378,22 @@ convenience_test_() ->
                   value(S1))
        end}]}.
 
+readme_ordsets_test() ->
+    New = statebox:new(fun () -> [] end),
+    ChildA = statebox:modify({fun ordsets:add_element/2, [a]}, New),
+    ChildB = statebox:modify({fun ordsets:add_element/2, [b]}, New),
+    Resolved = statebox:merge([ChildA, ChildB]),
+    ?assertEqual(
+       [a, b],
+       statebox:value(Resolved)).
+
+readme_ordsets_manual_test() ->
+    New = statebox:new(0, fun () -> [] end),
+    ChildA = statebox:modify(1, {fun ordsets:add_element/2, [a]}, New),
+    ChildB = statebox:modify(2, {fun ordsets:add_element/2, [b]}, New),
+    Resolved = statebox:merge([ChildA, ChildB]),
+    ?assertEqual(
+       [a, b],
+       statebox:value(Resolved)).
+
 -endif.
