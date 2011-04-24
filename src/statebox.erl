@@ -13,7 +13,7 @@
 -module(statebox).
 -export([new/2, modify/3, merge/1, expire/2, truncate/2,
          new/1, modify/2,
-         value/1, last_modified/1]).
+         value/1, last_modified/1, is_statebox/1]).
 
 -record(statebox, {
           value :: term(),
@@ -31,6 +31,14 @@
 -ifdef(TEST).
 -export([dummy_mfa_4/4]).
 -endif.
+
+%% @doc Return <code>true</code> if the argument is a statebox, <code>false</code>
+%%      otherwise.
+-spec is_statebox(term()) -> boolean().
+is_statebox(#statebox{}) ->
+    true;
+is_statebox(_T) ->
+    false.
 
 %% @doc Construct a statebox at <code>statebox_clock:timestamp()</code>
 %%      containing the result of <code>Constructor()</code>. This should
@@ -395,5 +403,14 @@ readme_ordsets_manual_test() ->
     ?assertEqual(
        [a, b],
        statebox:value(Resolved)).
+
+is_statebox_test() ->
+    ?assertEqual(
+       false,
+       is_statebox(not_a_statebox)),
+    ?assertEqual(
+       true,
+       is_statebox(new(fun () -> is_a_statebox end))),
+    ok.
 
 -endif.
