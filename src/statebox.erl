@@ -13,7 +13,7 @@
 -module(statebox).
 -export([new/2, modify/3, merge/1, expire/2, truncate/2,
          new/1, modify/2,
-         value/1, last_modified/1, is_statebox/1]).
+         value/1, last_modified/1, is_statebox/1, apply_op/2]).
 
 -record(statebox, {
           value :: term(),
@@ -121,6 +121,25 @@ modify(T, _Op, #statebox{last_modified=OldT}) ->
 modify(Op, S) ->
     modify(max(1 + last_modified(S), statebox_clock:timestamp()), Op, S).
 
+%% @doc Apply an op() to <code>Data</code>.
+-spec apply_op(op(), term()) -> term().
+apply_op({F, [A]}, Data) when is_function(F, 2) ->
+    F(A, Data);
+apply_op({F, [A, B]}, Data) when is_function(F, 3) ->
+    F(A, B, Data);
+apply_op({F, A}, Data) when is_function(F) ->
+    apply(F, A ++ [Data]);
+apply_op({M, F, [A]}, Data) ->
+    M:F(A, Data);
+apply_op({M, F, [A, B]}, Data) ->
+    M:F(A, B, Data);
+apply_op({M, F, A}, Data) ->
+    apply(M, F, A ++ [Data]);
+apply_op([Op | Rest], Data) ->
+    apply_op(Rest, apply_op(Op, Data));
+apply_op([], Data) ->
+    Data.
+
 %% Internal API
 
 newest([First | Rest]) ->
@@ -146,24 +165,6 @@ apply_queue(Data, [{_T, Op} | Rest]) ->
     apply_queue(apply_op(Op, Data), Rest);
 apply_queue(Data, []) ->
     Data.
-
-apply_op({F, [A]}, Data) when is_function(F, 2) ->
-    F(A, Data);
-apply_op({F, [A, B]}, Data) when is_function(F, 3) ->
-    F(A, B, Data);
-apply_op({F, A}, Data) when is_function(F) ->
-    apply(F, A ++ [Data]);
-apply_op({M, F, [A]}, Data) ->
-    M:F(A, Data);
-apply_op({M, F, [A, B]}, Data) ->
-    M:F(A, B, Data);
-apply_op({M, F, A}, Data) ->
-    apply(M, F, A ++ [Data]);
-apply_op([Op | Rest], Data) ->
-    apply_op(Rest, apply_op(Op, Data));
-apply_op([], Data) ->
-    Data.
-
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
