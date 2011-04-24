@@ -24,8 +24,9 @@
 -type event() :: {timestamp(), op()}.
 -type timestamp() :: integer().
 -type timedelta() :: integer().
--type op() :: {module(), atom(), [term()]} |
-              {fun((...) -> statebox()), [term()]}.
+-type basic_op() :: {module(), atom(), [term()]} |
+                    {fun((...) -> statebox()), [term()]}.
+-type op() :: basic_op() | [op()].
 
 %% Used in a test, must be done before function definitions.
 -ifdef(TEST).
@@ -108,8 +109,7 @@ merge(Unordered) ->
 -spec modify(timestamp(), op(), statebox()) -> statebox().
 modify(T, Op, #statebox{value=Value, queue=Queue, last_modified=OldT})
   when OldT =< T ->
-    Event = {T, Op},
-    new(T, apply_event(Event, Value), queue_in(Event, Queue));
+    new(T, apply_op(Op, Value), queue_in({T, Op}, Queue));
 modify(T, _Op, #statebox{last_modified=OldT}) ->
     throw({invalid_timestamp, {T, '<', OldT}}).
 
@@ -142,21 +142,28 @@ new(T, V, Q) ->
 queue_in(Event, Queue) ->
     Queue ++ [Event].
 
-apply_queue(Data, Queue) ->
-    lists:foldl(fun apply_event/2, Data, Queue).
+apply_queue(Data, [{_T, Op} | Rest]) ->
+    apply_queue(apply_op(Op, Data), Rest);
+apply_queue(Data, []) ->
+    Data.
 
-apply_event({_T, {F, [A]}}, Data) when is_function(F, 2) ->
+apply_op({F, [A]}, Data) when is_function(F, 2) ->
     F(A, Data);
-apply_event({_T, {F, [A, B]}}, Data) when is_function(F, 3) ->
+apply_op({F, [A, B]}, Data) when is_function(F, 3) ->
     F(A, B, Data);
-apply_event({_T, {F, A}}, Data) when is_function(F) ->
+apply_op({F, A}, Data) when is_function(F) ->
     apply(F, A ++ [Data]);
-apply_event({_T, {M, F, [A]}}, Data) ->
+apply_op({M, F, [A]}, Data) ->
     M:F(A, Data);
-apply_event({_T, {M, F, [A, B]}}, Data) ->
+apply_op({M, F, [A, B]}, Data) ->
     M:F(A, B, Data);
-apply_event({_T, {M, F, A}}, Data) ->
-    apply(M, F, A ++ [Data]).
+apply_op({M, F, A}, Data) ->
+    apply(M, F, A ++ [Data]);
+apply_op([Op | Rest], Data) ->
+    apply_op(Rest, apply_op(Op, Data));
+apply_op([], Data) ->
+    Data.
+
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -201,6 +208,22 @@ bad_modify_test() ->
 %% @private
 dummy_mfa_4(a, b, C, D) ->
     ordsets:add_element(C, D).
+
+batch_apply_op_test() ->
+    S = new(0, fun () -> [] end),
+    S0 = modify([], S),
+    S1 = modify([{ordsets, add_element, [N]} || N <- lists:seq(1, 1)], S),
+    S10 = modify([{ordsets, add_element, [N]} || N <- lists:seq(1, 10)], S),
+    ?assertEqual(
+       [],
+       value(S0)),
+    ?assertEqual(
+       lists:seq(1, 1),
+       value(S1)),
+    ?assertEqual(
+       lists:seq(1, 10),
+       value(S10)),
+    ok.
 
 alt_apply_op_test() ->
     L = [fun (N=1) -> {ordsets, add_element, [N]} end,

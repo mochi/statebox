@@ -29,7 +29,8 @@ resolved in a deterministic manner.
 An `op()` is a `{fun(), [term()]}`, with all but the last argument specified
 in the term list. For example `{ordsets:add_element/2, [a]}`. To evaluate
 this op, `ordsets:add_element(a, value(Statebox))` will be called. It is also
-possible to specify an `op()` as a `{module(), atom(), [term()]}` tuple.
+possible to specify an `op()` as a `{module(), atom(), [term()]}` tuple, or
+as a list of `op()` when performing several operations at the same timestamp.
 
 There are several important limitations on the kinds of `op()` that are safe
 to use (`{F, [Arg]}` is the example `op()` used below):
