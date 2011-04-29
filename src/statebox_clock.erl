@@ -8,7 +8,7 @@
 -define(MEGA, 1000000).
 
 %% @doc Current UNIX epoch timestamp in integer milliseconds.
-%% @equiv now_to_msec(os:timestamp()).
+%%      Equivalient to <code>now_to_msec(os:timestamp())</code>.
 -spec timestamp() -> integer().
 timestamp() ->
     now_to_msec(os:timestamp()).

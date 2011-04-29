@@ -84,3 +84,15 @@ With manual control over timestamps:
     ChildB = statebox:modify(2, {fun ordsets:add_element/2, [b]}, New),
     Resolved = statebox:merge([ChildA, ChildB]),
     statebox:value(Resolved) =:= [a, b].
+
+Using the `statebox_orddict` convenience wrapper:
+
+    New = statebox_orddict:from_values([]),
+    ChildA = statebox:modify([statebox_orddict:f_store(a, 1),
+                              statebox_orddict:f_union(c, [a, aa])],
+                             New),
+    ChildB = statebox:modify([statebox_orddict:f_store(b, 1),
+                              statebox_orddict:f_union(c, [b, bb])],
+                             New),
+    Resovled = statebox_orddict:from_values([ChildA, ChildB]),
+    statebox:value(Resolved) =:= [{a, 1}, {b, 1}, {c, [a, aa, b, bb]}].
