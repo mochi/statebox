@@ -1,3 +1,7 @@
+Version 0.2.1 released 2011-04-30
+
+* Added LICENSE file (MIT)
+
 Version 0.2.0 released 2011-04-22
 
 * Added statebox_orddict convenience wrapper
