@@ -13,8 +13,7 @@ manner.
 Status:
 -------
 
-Not used in production, but it has a test suite that passes. We plan to use it
-soon.
+Used in production at Mochi Media for multiple backend services.
 
 Theory:
 -------
