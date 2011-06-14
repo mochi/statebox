@@ -39,7 +39,7 @@ is_empty(Box) ->
 f_union(K, New) ->
     {fun ?MODULE:op_union/3, [K, New]}.
 
-%% @doc Returns an op() that does an ordsets:union(Del, Set) on the value at
+%% @doc Returns an op() that does an ordsets:subtract(Set, Del) on the value at
 %%      K in orddict (or [] if not present).
 -spec f_subtract(term(), [term()]) -> op().
 f_subtract(K, Del) ->
