@@ -1,3 +1,10 @@
+Version 0.2.2 released 2011-06-14
+
+* Updated README
+* statebox_orddict:orddict_from_proplist/1 now uses
+  orddict:from_list/1 instead of lists:usort/1 for correctness
+* Fixed docstring for statebox_orddict:f_subtract/2
+
 Version 0.2.1 released 2011-04-30
 
 * Added LICENSE file (MIT)

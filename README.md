@@ -95,3 +95,30 @@ Using the `statebox_orddict` convenience wrapper:
                              New),
     Resovled = statebox_orddict:from_values([ChildA, ChildB]),
     statebox:value(Resolved) =:= [{a, 1}, {b, 1}, {c, [a, aa, b, bb]}].
+
+Resources
+---------
+
+On Mochi Labs
+=============
+
+[statebox, an eventually consistent data model for Erlang (and Riak)][labs0]
+on the Mochi Labs blog describes the rationale for statebox and shows how it
+works.
+
+[labs0]: http://labs.mochimedia.com/archive/2011/05/08/statebox/
+
+Convergent / Commutative Replicated Data Types
+==============================================
+
+The technique used to implement this is similar to what is described in
+this paper:
+[A comprehensive study of Convergent and Commutative Replicated Data Types][CRDT].
+statebox was developed without knowledge of the paper, so the terminology and
+implementation details differ.
+
+I think the technique used by statebox would be best described as a
+state-based object, although the merge algorithm and event queue
+is similar to how op-based objects are described.
+
+[CRDT]: http://hal.archives-ouvertes.fr/inria-00555588/

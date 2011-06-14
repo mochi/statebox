@@ -22,11 +22,11 @@ from_values([]) ->
 from_values(Vals) ->
     statebox:merge([as_statebox(V) || V <- Vals]).
 
-%% @doc Convert a proplist() to an orddict() (by sorting it).
+%% @doc Convert a proplist() to an orddict().
 %%      Only [{term(), term()}] proplists are supported.
 -spec orddict_from_proplist(proplist()) -> orddict().
 orddict_from_proplist(P) ->
-    lists:usort(P).
+    orddict:from_list(P).
 
 %% @doc Return true if the statebox's value is [], false otherwise.
 -spec is_empty(statebox()) -> boolean().
@@ -121,6 +121,12 @@ orddict_from_proplist_test() ->
     ?assertEqual(
        [{a, b}, {c, d}],
        orddict_from_proplist([{c, d}, {a, b}])),
+    ?assertEqual(
+       [{a, c}],
+       orddict_from_proplist([{a, b}, {a, c}])),
+    ?assertEqual(
+       [{a, b}],
+       orddict_from_proplist([{a, c}, {a, b}])),
     ok.
 
 is_empty_test() ->
