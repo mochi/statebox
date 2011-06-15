@@ -61,6 +61,39 @@ initial_test() ->
        statebox_counter:value([])),
     ok.
 
+inc_test() ->
+    C0 = [],
+    C1 = statebox_counter:inc({1, 1}, 1, C0),
+    C2 = statebox_counter:inc({2, 2}, 1, C1),
+    ?assertEqual(
+       0,
+       statebox_counter:value(C0)),
+    ?assertEqual(
+       1,
+       statebox_counter:value(C1)),
+    ?assertEqual(
+       2,
+       statebox_counter:value(C2)),
+    ok.
+
+merge_test() ->
+    C0 = [],
+    C1 = statebox_counter:inc({1, 1}, 1, C0),
+    C2 = statebox_counter:inc({2, 2}, 1, C1),
+    ?assertEqual(
+       2,
+       statebox_counter:value(statebox_counter:merge([C0, C1, C2]))),
+    ?assertEqual(
+       1,
+       statebox_counter:value(statebox_counter:merge([C0, C1, C1]))),
+    ?assertEqual(
+       1,
+       statebox_counter:value(statebox_counter:merge([C1]))),
+    ?assertEqual(
+       0,
+       statebox_counter:value(statebox_counter:merge([C0, C0]))),
+    ok.
+
 next_clock(N) ->
     Next = N + clock_step(),
     meck:expect(statebox_clock, timestamp, fun () -> next_clock(Next) end),

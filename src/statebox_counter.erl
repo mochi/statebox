@@ -1,6 +1,7 @@
 %% @doc Integer counter based on an ordered list of events.
 -module(statebox_counter).
--export([value/1, merge/1, compact/2, inc/3, f_inc_compact/2, op_inc_compact/4]).
+-export([value/1, merge/1, compact/2, inc/3]).
+-export([f_inc_compact/2, f_inc_compact/3, op_inc_compact/4]).
 
 -type op() :: statebox:op().
 -type timestamp() :: statebox_clock:timestamp().
@@ -23,17 +24,24 @@ merge(Counters) ->
     orddict:from_list(lists:umerge(compact_heads(Counters))).
 
 -spec compact(timestamp(), counter()) -> counter().
+compact(Timestamp, Counter=[{T0, merged} | _]) when Timestamp =< T0 ->
+    Counter;
 compact(Timestamp, Counter) ->
     compact(Timestamp, Counter, 0).
 
 -spec inc(counter_key(), integer(), counter()) -> counter().
+inc({T1, _Id1}, _Value, Counter=[{T0, merged} | _Rest]) when T1 =< T0 ->
+    Counter;
 inc(Key, Value, Counter) ->
     orddict:store(Key, Value, Counter).
 
 -spec f_inc_compact(integer(), timedelta()) -> op().
 f_inc_compact(Value, Age) ->
-    Timestamp = statebox_clock:timestamp(),
-    Key = {Timestamp, statebox_identity:entropy()},
+    Key = {statebox_clock:timestamp(), statebox_identity:entropy()},
+    f_inc_compact(Value, Age, Key).
+
+-spec f_inc_compact(integer(), timedelta(), counter_key()) -> op().
+f_inc_compact(Value, Age, Key={Timestamp, _Id}) ->
     {fun ?MODULE:op_inc_compact/4, [Timestamp - Age, Key, Value]}.
 
 %% @private
