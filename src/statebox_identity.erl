@@ -1,18 +1,17 @@
-%% @doc Functions for uniquely identifying Erlang processes.
+%% @doc Functions for uniquely identifying events.
 -module(statebox_identity).
 
--export([pid_cookie/2, pid_cookie/0]).
+-export([entropy/2, entropy/0]).
 
--type pid_cookie() :: 1..4294967296.
+-type entropy() :: 1..4294967296.
 
-%% @equiv pid_cookie(node(), self()).
--spec pid_cookie() -> pid_cookie().
-pid_cookie() ->
-    pid_cookie(node(), self()).
+%% @equiv entropy(node(), statebox_clock:now()).
+-spec entropy() -> entropy().
+entropy() ->
+    entropy(node(), statebox_clock:now()).
 
-%% @doc Return an integer that uniquely represents the node and pid
-%%      combination at this moment. Should be combined with a timestamp
-%%      if used as a globally unique identifier.
--spec pid_cookie(node(), pid()) -> pid_cookie().
-pid_cookie(Node, Pid) ->
-    erlang:phash2({Node, Pid}).
+%% @doc Return an integer that can be expected to be reasonably unique
+%%      at a given msec timestamp.
+-spec entropy(node(), calendar:t_now()) -> entropy().
+entropy(Node, Now) ->
+    erlang:phash2({Node, Now}).

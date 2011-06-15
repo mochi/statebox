@@ -5,7 +5,7 @@
 -type op() :: statebox:op().
 -type timestamp() :: statebox_clock:timestamp().
 -type timedelta() :: statebox:timedelta().
--type counter_id() :: statebox_identity:pid_cookie() | merged.
+-type counter_id() :: statebox_identity:entropy() | merged.
 -type counter_key() :: {timestamp(), counter_id()}.
 -type counter_op() :: {counter_key(), integer()}.
 -type counter() :: [counter_op()].
@@ -33,7 +33,7 @@ inc(Key, Value, Counter) ->
 -spec f_inc_compact(integer(), timedelta()) -> op().
 f_inc_compact(Value, Age) ->
     Timestamp = statebox_clock:timestamp(),
-    Key = {Timestamp, statebox_identity:pid_cookie()},
+    Key = {Timestamp, statebox_identity:entropy()},
     {fun ?MODULE:op_inc_compact/4, [Timestamp - Age, Key, Value]}.
 
 %% @private
