@@ -1,12 +1,12 @@
 %% @doc Integer counter based on an ordered list of events.
 -module(statebox_counter).
--export([value/1, merge/1, compact/2, inc/3]).
--export([f_inc_compact/2, f_inc_compact/3, op_inc_compact/4]).
+-export([value/1, merge/1, accumulate/2, inc/3]).
+-export([f_inc_acc/2, f_inc_acc/3, op_inc_acc/4]).
 
 -type op() :: statebox:op().
 -type timestamp() :: statebox_clock:timestamp().
 -type timedelta() :: statebox:timedelta().
--type counter_id() :: statebox_identity:entropy() | merged.
+-type counter_id() :: statebox_identity:entropy() | acc.
 -type counter_key() :: {timestamp(), counter_id()}.
 -type counter_op() :: {counter_key(), integer()}.
 -type counter() :: [counter_op()].
@@ -21,55 +21,46 @@ value([{_Key, Value} | Rest]) ->
 merge([Counter]) ->
     Counter;
 merge(Counters) ->
-    orddict:from_list(lists:umerge(compact_heads(Counters))).
+    orddict:from_list(merge_prune(Counters)).
 
--spec compact(timestamp(), counter()) -> counter().
-compact(Timestamp, Counter=[{T0, merged} | _]) when Timestamp =< T0 ->
+-spec accumulate(timestamp(), counter()) -> counter().
+accumulate(Timestamp, Counter=[{{T0, acc}, _} | _]) when Timestamp =< T0 ->
     Counter;
-compact(Timestamp, Counter) ->
-    compact(Timestamp, Counter, 0).
+accumulate(Timestamp, Counter) ->
+    accumulate(Timestamp, Counter, 0).
 
 -spec inc(counter_key(), integer(), counter()) -> counter().
-inc({T1, _Id1}, _Value, Counter=[{T0, merged} | _Rest]) when T1 =< T0 ->
+inc({T1, _Id1}, _Value, Counter=[{{T0, acc}, _} | _Rest]) when T1 =< T0 ->
     Counter;
 inc(Key, Value, Counter) ->
     orddict:store(Key, Value, Counter).
 
--spec f_inc_compact(integer(), timedelta()) -> op().
-f_inc_compact(Value, Age) ->
+-spec f_inc_acc(integer(), timedelta()) -> op().
+f_inc_acc(Value, Age) ->
     Key = {statebox_clock:timestamp(), statebox_identity:entropy()},
-    f_inc_compact(Value, Age, Key).
+    f_inc_acc(Value, Age, Key).
 
--spec f_inc_compact(integer(), timedelta(), counter_key()) -> op().
-f_inc_compact(Value, Age, Key={Timestamp, _Id}) ->
-    {fun ?MODULE:op_inc_compact/4, [Timestamp - Age, Key, Value]}.
+-spec f_inc_acc(integer(), timedelta(), counter_key()) -> op().
+f_inc_acc(Value, Age, Key={Timestamp, _Id}) ->
+    {fun ?MODULE:op_inc_acc/4, [Timestamp - Age, Key, Value]}.
 
 %% @private
-op_inc_compact(Timestamp, Key, Value, Counter) ->
-    compact(Timestamp, inc(Key, Value, Counter)).
+op_inc_acc(Timestamp, Key, Value, Counter) ->
+    accumulate(Timestamp, inc(Key, Value, Counter)).
 
 %% Internal API
 
-compact(Timestamp, [{{T1, _Id}, Value} | Rest], Sum) when T1 =< Timestamp ->
-    compact(Timestamp, Rest, Value + Sum);
-compact(Timestamp, Counter, Sum) ->
-    [{{Timestamp, merged}, Sum} | Counter].
+merge_prune(Counters) ->
+    merge_prune(lists:umerge(Counters), []).
 
-compact_heads(Counters) ->
-    Timestamp = max_head(Counters),
-    [compact_head(Counter, Timestamp) || Counter <- Counters].
+merge_prune(L=[{{_, acc}, _} | _], Acc) ->
+    lists:reverse(Acc, L);
+merge_prune([H | T], Acc) ->
+    merge_prune(T, [H | Acc]);
+merge_prune([], Acc) ->
+    lists:reverse(Acc).
 
-compact_head([{{T0, _Id}, _V} | Rest], Timestamp) when Timestamp > T0 ->
-    compact_head(Rest, Timestamp);
-compact_head(Counter, _Timestamp) ->
-    Counter.
-
-max_head(Counter) ->
-    max_head(Counter, 0).
-
-max_head([], Timestamp) ->
-    Timestamp;
-max_head([{{T0, merged}, _V} | Rest], Timestamp) when T0 > Timestamp ->
-    max_head(Rest, T0);
-max_head([_ | Rest], Timestamp) ->
-    max_head(Rest, Timestamp).
+accumulate(Timestamp, [{{T1, _Id}, Value} | Rest], Sum) when T1 =< Timestamp ->
+    accumulate(Timestamp, Rest, Value + Sum);
+accumulate(Timestamp, Counter, Sum) ->
+    inc({Timestamp, acc}, Sum, Counter).

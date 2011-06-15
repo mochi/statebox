@@ -2,7 +2,7 @@
 -behaviour(proper_statem).
 -export([initial_state/0, command/1,
 	 precondition/2, postcondition/3, next_state/3]).
--export([apply_f_inc_compact/2]).
+-export([apply_f_inc_acc/3, add_sibling/0, merge_siblings/1]).
 
 -include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -13,33 +13,52 @@ clock_step() ->
 default_age() ->
     10 * clock_step().
 
-apply_f_inc_compact(Value, Counter) ->
+apply_f_inc_acc(Value, N, Counters) ->
     statebox:apply_op(
-      statebox_counter:f_inc_compact(Value, default_age()),
-      Counter).
+      statebox_counter:f_inc_acc(Value, default_age()),
+      lists:nth(N, Counters)).
+
+add_sibling() ->
+    ok.
+
+merge_siblings(_N) ->
+    ok.
 
 %% statem
--record(state, {counter=[], value=[0]}).
+
+%% TODO:
+%% Generate a new sibling   (add_sibling)
+%% Update existing counter  (apply_f_inc_acc)
+%% Merge (up to) N siblings (merge_siblings)
+%% Expiration used will be for 20 clock cycles
+-record(state, {counters=[[]], num_counters=1, value=[]}).
 
 initial_state() ->
     #state{}.
 
-command(#state{counter=Counter}) ->
-    oneof([{call, ?MODULE, apply_f_inc_compact, [range(-3, 3), Counter]},
-           {call, statebox_counter, value, [Counter]}]).
+command(#state{counters=Counters, num_counters=N}) ->
+    oneof([{call, ?MODULE, add_sibling, []},
+           {call, ?MODULE, merge_siblings, [range(1, N)]},
+           {call, ?MODULE, apply_f_inc_acc, [range(-3, 3), range(1, N), Counters]}]).
 
 precondition(_S, _Call) ->
     true.
 
-postcondition(S, {call, _, value, _}, Res) ->
-    lists:sum(S#state.value) =:= Res;
-postcondition(S, {call, _, apply_f_inc_compact, [Inc, _]}, Res) ->
-    (Inc + lists:sum(S#state.value)) =:= statebox_counter:value(Res).
+postcondition(S, {call, _, apply_f_inc_acc, [Inc, _]}, Res) ->
+    (Inc + lists:sum(S#state.value)) =:= statebox_counter:value(Res);
+postcondition(S, {call, _, _, _}, _Res) ->
+    lists:sum(S#state.value) =:=
+        statebox_counter:value(statebox_counter:merge(S#state.counters)).
 
-next_state(S, _V, {call, _, value, _}) ->
-    S;
-next_state(S, V, {call, _, apply_f_inc_compact, [Inc, _C]}) ->
-    S#state{counter=V, value=[Inc | S#state.value]}.
+next_state(S=#state{counters=[H|T]}, _V, {call, _, add_sibling, []}) ->
+    S#state{counters=[H,H|T]};
+next_state(S=#state{counters=Counters}, _V, {call, _, merge_siblings, [N]}) ->
+    {L, T} = lists:split(N, Counters),
+    S#state{counters=[statebox_counter:merge(L) | T]};
+next_state(S=#state{counters=Counters}, V, {call, _, apply_f_inc_acc, [Inc, N, _C]}) ->
+    Counters1 = lists:sublist(Counters, N - 1) ++ [V | lists:nthtail(N, Counters)],
+    S#state{counters=Counters1,
+            value=[Inc | S#state.value]}.
 
 %% properties
 
