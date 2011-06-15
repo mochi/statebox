@@ -127,6 +127,8 @@ apply_op({F, [A]}, Data) when is_function(F, 2) ->
     F(A, Data);
 apply_op({F, [A, B]}, Data) when is_function(F, 3) ->
     F(A, B, Data);
+apply_op({F, [A, B, C]}, Data) when is_function(F, 4) ->
+    F(A, B, C, Data);
 apply_op({F, A}, Data) when is_function(F) ->
     apply(F, A ++ [Data]);
 apply_op({M, F, [A]}, Data) ->
@@ -225,6 +227,13 @@ batch_apply_op_test() ->
        lists:seq(1, 10),
        value(S10)),
     ok.
+
+apply_op_5_test() ->
+    ?assertEqual(
+       [a, b, c, d, e],
+       statebox:apply_op(
+         {fun (A, B, C, D, E) -> [A, B, C, D, E] end, [a, b, c, d]},
+         e)).
 
 alt_apply_op_test() ->
     L = [fun (N=1) -> {ordsets, add_element, [N]} end,
