@@ -51,14 +51,17 @@ op_inc_acc(Timestamp, Key, Value, Counter) ->
 %% Internal API
 
 merge_prune(Counters) ->
-    merge_prune(lists:umerge(Counters), []).
+    prune(lists:umerge(Counters)).
 
-merge_prune(L=[{{_, acc}, _} | _], Acc) ->
-    lists:reverse(Acc, L);
-merge_prune([H | T], Acc) ->
-    merge_prune(T, [H | Acc]);
-merge_prune([], Acc) ->
-    lists:reverse(Acc).
+prune(All) ->
+    prune(All, All).
+
+prune(Here=[{{_Ts, acc}, _V} | Rest], _Last) ->
+    prune(Rest, Here);
+prune([_ | Rest], Last) ->
+    prune(Rest, Last);
+prune([], Last) ->
+    Last.
 
 accumulate(Timestamp, [{{T1, _Id}, Value} | Rest], Sum) when T1 =< Timestamp ->
     accumulate(Timestamp, Rest, Value + Sum);
