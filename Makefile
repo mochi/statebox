@@ -6,7 +6,7 @@ all:
 	@$(REBAR) get-deps compile
 
 edoc:
-	@$(REBAR) doc
+	@$(REBAR) doc skip_deps=true
 
 test:
 	@$(REBAR) skip_deps=true eunit

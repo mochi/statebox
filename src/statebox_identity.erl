@@ -5,7 +5,7 @@
 
 -type entropy() :: 1..4294967296.
 
-%% @equiv entropy(node(), statebox_clock:now()).
+%% @equiv entropy(node(), statebox_clock:now())
 -spec entropy() -> entropy().
 entropy() ->
     entropy(node(), statebox_clock:now()).
