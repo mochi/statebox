@@ -102,6 +102,57 @@ initial_test() ->
        statebox_counter:value([])),
     ok.
 
+old_counter_test() ->
+    %% Entropy part of the tuple is 0 here, we don't need it for this test.
+    Fold = fun (T, Acc) ->
+                   statebox:apply_op(
+                     statebox_counter:f_inc_acc(1, 10, {T, 0}),
+                     Acc)
+           end,
+    Ctr = lists:foldl(Fold, [], lists:seq(10, 30, 2)),
+    ?assertEqual(
+       [{{20, acc}, 6},
+        {{22, 0}, 1},
+        {{24, 0}, 1},
+        {{26, 0}, 1},
+        {{28, 0}, 1},
+        {{30, 0}, 1}],
+       Ctr),
+    ?assertEqual(
+       11,
+       statebox_counter:value(Ctr)),
+    %% Should fill in only lists:seq(21, 29, 2).
+    Ctr1 = lists:foldl(Fold, Ctr, lists:seq(1, 30)),
+    ?assertEqual(
+       [{{20, acc}, 6},
+        {{21, 0}, 1},
+        {{22, 0}, 1},
+        {{23, 0}, 1},
+        {{24, 0}, 1},
+        {{25, 0}, 1},
+        {{26, 0}, 1},
+        {{27, 0}, 1},
+        {{28, 0}, 1},
+        {{29, 0}, 1},
+        {{30, 0}, 1}],
+       Ctr1),
+    ?assertEqual(
+       16,
+       statebox_counter:value(Ctr1)),
+    ok.
+
+f_inc_acc_test() ->
+    %% We should expect to get unique enough results from our entropy and
+    %% timestamp even if the frequency is high.
+    ?assertEqual(
+       1000,
+       statebox_counter:value(
+         lists:foldl(
+           fun statebox:apply_op/2,
+           [],
+           [statebox_counter:f_inc_acc(1, 1000) || _ <- lists:seq(1, 1000)]))),
+    ok.
+
 inc_test() ->
     C0 = [],
     C1 = statebox_counter:inc({1, 1}, 1, C0),
