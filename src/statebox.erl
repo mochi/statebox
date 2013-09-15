@@ -22,11 +22,12 @@
           last_modified :: timestamp()}).
 -opaque statebox() :: #statebox{}.
 -type event() :: {timestamp(), op()}.
--type timestamp() :: integer().
+-type timestamp() :: statebox_clock:timestamp().
 -type timedelta() :: integer().
 -type basic_op() :: {module(), atom(), [term()]} |
                     {fun((...) -> statebox()), [term()]}.
 -type op() :: basic_op() | [op()].
+-export_type([statebox/0, event/0, timestamp/0, timedelta/0, basic_op/0, op/0]).
 
 %% Used in a test, must be done before function definitions.
 -ifdef(TEST).
@@ -35,7 +36,7 @@
 
 %% @doc Return <code>true</code> if the argument is a statebox, <code>false</code>
 %%      otherwise.
--spec is_statebox(term()) -> boolean().
+-spec is_statebox(statebox() | term()) -> boolean().
 is_statebox(#statebox{}) ->
     true;
 is_statebox(_T) ->
@@ -46,6 +47,7 @@ is_statebox(_T) ->
 %%      return an "empty" object of the desired type, such as
 %%      <code>fun gb_trees:empty/0</code>.
 %% @equiv new(timestamp(), Constructor)
+-spec new(fun(() -> term())) -> statebox().
 new(Constructor) ->
     new(statebox_clock:timestamp(), Constructor).
 

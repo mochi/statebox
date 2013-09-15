@@ -1,3 +1,8 @@
+Version 0.2.3 released 2013-09-15
+
+* Cleaned up type specs for dialyzer
+  https://github.com/mochi/statebox/issues/4
+
 Version 0.2.2 released 2011-06-14
 
 * Updated README
