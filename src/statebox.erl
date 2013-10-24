@@ -25,7 +25,8 @@
 -type timestamp() :: statebox_clock:timestamp().
 -type timedelta() :: integer().
 -type basic_op() :: {module(), atom(), [term()]} |
-                    {fun((...) -> statebox()), [term()]}.
+                    {fun((term(), term()) -> statebox()) | 
+                     fun((term(), term(), term()) -> statebox()), [term()]}.
 -type op() :: basic_op() | [op()].
 -export_type([statebox/0, event/0, timestamp/0, timedelta/0, basic_op/0, op/0]).
 
