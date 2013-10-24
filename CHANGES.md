@@ -1,3 +1,8 @@
+Version 0.2.4 released 2013-10-24
+
+* Cleaned up type specs for R15B dialyzer
+  https://github.com/mochi/statebox/issues/6
+
 Version 0.2.3 released 2013-09-15
 
 * Cleaned up type specs for dialyzer
